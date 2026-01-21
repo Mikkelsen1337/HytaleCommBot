@@ -41,6 +41,8 @@ class UpdateCog(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def check_updates(self):
+        print("check_updates RUNNING")
+
         await self.bot.wait_until_ready()
 
         async with aiohttp.ClientSession() as session:

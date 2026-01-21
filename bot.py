@@ -24,4 +24,6 @@ async def load_cogs():
 async def setup_hook():
     await load_cogs()
 
+bot.setup_hook = setup_hook
+
 bot.run(os.getenv("DISCORD_TOKEN"))
