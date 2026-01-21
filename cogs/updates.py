@@ -39,7 +39,7 @@ class UpdateCog(commands.Cog):
     def save_state(self, state):
         STATE_FILE.write_text(json.dumps(state, indent=2))
 
-    @tasks.loop(minutes=10)
+    @tasks.loop(minutes=1)
     async def check_updates(self):
         await self.bot.wait_until_ready()
 
