@@ -40,54 +40,52 @@ class UpdateCog(commands.Cog):
     def save_state(self, state):
         STATE_FILE.write_text(json.dumps(state, indent=2))
 
-    @tasks.loop(minutes=1)
+    @tasks.loop(minutes=10)
     async def check_updates(self):
         print("check_updates RUNNING")
 
-        await self.bot.wait_until_ready()
-
         async with aiohttp.ClientSession() as session:
-            async with session.get(Hytale_News_URL) as resp:
+            async with session.get(
+                    "https://hytale.com/api/blog/post/published?limit=1"
+            ) as resp:
                 if resp.status != 200:
+                    print("API fejl:", resp.status)
                     return
 
-                html = await resp.text()
+                data = await resp.json()
 
-
-        soup = BeautifulSoup(html, "html.parser")
-
-        first_article = soup.select_one("a[href^='/news/']")
-        if not first_article:
+        if not data:
+            print("Ingen posts i API-respons")
             return
 
-        link = "https://hytale.com" + first_article["href"]
-        title = first_article.get_text(strip=True)
+        latest = data[0]
+
+        slug = latest["slug"]
+        title = latest["title"]
+
+        link = f"https://hytale.com/news/{latest['year']}/{latest['month']}/{slug}"
 
         state = self.load_state()
-        if state.get("last_post_id") == link:
+        if state.get("last_post_id") == slug:
             return
 
-        state["last_post_id"] = link
+        state["last_post_id"] = slug
         self.save_state(state)
 
         guild = self.bot.get_guild(GUILD_ID)
         if not guild:
             print("Guild ikke fundet")
             return
+
         role = discord.utils.get(guild.roles, name=ROLE_MAP["news"])
         channel = guild.get_channel(NEWS_CHANNEL_ID)
 
-        print("LINK:", link)
-        print("TITLE:", title)
-        print("ROLE:", role)
-        print("CHANNEL:", channel)
-        print("HTML længde:", len(html))
-
         if not role or not channel:
+            print("Role eller channel mangler")
             return
 
         embed = discord.Embed(
-            title=title or "Ny Hytale Opdatering",
+            title=title,
             description="Der er netop udkommet et nyt blogpost fra Hytale.",
             url=link,
             colour=discord.Colour.green()
