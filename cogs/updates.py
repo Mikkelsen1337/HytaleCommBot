@@ -40,11 +40,21 @@ class UpdateCog(commands.Cog):
     def save_state(self, state):
         STATE_FILE.write_text(json.dumps(state, indent=2))
 
-    @tasks.loop(minutes=10)
+    @tasks.loop(minutes=1)
     async def check_updates(self):
         print("check_updates RUNNING")
 
-        async with aiohttp.ClientSession() as session:
+        headers = {
+            "Accept": "application/json",
+            "Accept-Language": "en",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+        }
+
+        async with aiohttp.ClientSession(headers=headers) as session:
             async with session.get(
                     "https://hytale.com/api/blog/post/published?limit=1"
             ) as resp:
