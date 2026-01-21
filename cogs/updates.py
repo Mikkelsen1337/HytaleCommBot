@@ -19,14 +19,19 @@ ROLE_MAP = {
 
 Hytale_News_URL = "https://hytale.com/news"
 
+
 class UpdateCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.check_updates.start()
 
         if not STATE_FILE.exists():
             STATE_FILE.parent.mkdir(exist_ok=True)
             STATE_FILE.write_text(json.dumps({"last_post_id": None}))
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if not self.check_updates.is_running():
+            self.check_updates.start()
 
     def load_state(self):
         return json.loads(STATE_FILE.read_text())
@@ -52,7 +57,7 @@ class UpdateCog(commands.Cog):
         if not first_article:
             return
 
-        link = "https://hytale.com" + first_article.get["href"]
+        link = "https://hytale.com" + first_article["href"]
         title = first_article.get_text(strip=True)
 
         state = self.load_state()
