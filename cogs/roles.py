@@ -4,8 +4,6 @@ from discord.ext import commands
 ROLE_MESSAGE_ID = 1463250512949416060
 ROLE_CHANNEL_ID = 1463249293853982842
 
-def normalize_emoji(emoji: str ) -> str:
-    return emoji.replace("\ufe0f","")
 
 ROLE_EMOJI_MAP = {
     "🏛️": "Builder",
@@ -55,7 +53,7 @@ class RoleCog(commands.Cog):
         if payload.message_id != ROLE_MESSAGE_ID:
             return
 
-        emoji = normalize_emoji(str(payload.emoji))
+        emoji = str(payload.emoji)
         if emoji not in ROLE_EMOJI_MAP:
             return
 
