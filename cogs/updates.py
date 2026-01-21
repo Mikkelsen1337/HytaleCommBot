@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 import aiohttp
 import json
 from pathlib import Path
-from bs4 import BeautifulSoup
+from datetime import datetime
 
 GUILD_ID = 1463239132129136893
 ANNOUNCE_CHANNEL_ID = 1463265703887896777
@@ -18,7 +18,6 @@ ROLE_MAP = {
     "": "@everyone"
 }
 
-Hytale_News_URL = "https://hytale.com/news"
 
 
 class UpdateCog(commands.Cog):
@@ -40,9 +39,8 @@ class UpdateCog(commands.Cog):
     def save_state(self, state):
         STATE_FILE.write_text(json.dumps(state, indent=2))
 
-    @tasks.loop(minutes=1)
+    @tasks.loop(minutes=10)
     async def check_updates(self):
-        print("check_updates RUNNING")
 
         headers = {
             "Accept": "application/json",
@@ -59,24 +57,28 @@ class UpdateCog(commands.Cog):
                     "https://hytale.com/api/blog/post/published?limit=1"
             ) as resp:
                 if resp.status != 200:
-                    print("API fejl:", resp.status)
                     return
 
                 data = await resp.json()
 
         if not data:
-            print("Ingen posts i API-respons")
             return
-
 
         latest = data[0]
 
-        slug = latest["slug"]
-        title = latest["title"]
 
-        link = f"https://hytale.com/news/{slug}"
+        try:
+            slug = latest["slug"]
+            title = latest["title"]
+            published_at = latest["publishedAt"]
+        except KeyError:
+            return
 
-        print("LATEST KEYS:", latest.keys())
+
+        dt = datetime.fromisoformat(published_at.replace("Z", ""))
+        link = f"https://hytale.com/news/{dt.year}/{dt.month}/{slug}"
+
+
         state = self.load_state()
         if state.get("last_post_id") == slug:
             return
@@ -84,16 +86,15 @@ class UpdateCog(commands.Cog):
         state["last_post_id"] = slug
         self.save_state(state)
 
+
         guild = self.bot.get_guild(GUILD_ID)
         if not guild:
-            print("Guild ikke fundet")
             return
 
         role = discord.utils.get(guild.roles, name=ROLE_MAP["news"])
         channel = guild.get_channel(NEWS_CHANNEL_ID)
 
         if not role or not channel:
-            print("Role eller channel mangler")
             return
 
         embed = discord.Embed(
