@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from bs4 import BeautifulSoup
 
+GUILD_ID = 1463239132129136893
 ANNOUNCE_CHANNEL_ID = 1463265703887896777
 NEWS_CHANNEL_ID = 1463259777286144032
 STATE_FILE = Path("data/hytale_state.json")
@@ -69,9 +70,17 @@ class UpdateCog(commands.Cog):
         state["last_post_id"] = link
         self.save_state(state)
 
-        guild = self.bot.guilds[0]
+        guild = self.bot.get_guild(GUILD_ID)
+        if not guild:
+            print("Guild ikke fundet")
+            return
         role = discord.utils.get(guild.roles, name=ROLE_MAP["news"])
         channel = guild.get_channel(NEWS_CHANNEL_ID)
+
+        print("LINK:", link)
+        print("TITLE:", title)
+        print("ROLE:", role)
+        print("CHANNEL:", channel)
 
         if not role or not channel:
             return
