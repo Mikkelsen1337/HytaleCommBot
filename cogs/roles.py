@@ -28,7 +28,7 @@ class RoleCog(commands.Cog):
         if payload.user_id == self.bot.user.id:
             return
 
-        emoji = normalize_emoji(str(payload.emoji))
+        emoji = str(payload.emoji)
         if emoji not in ROLE_EMOJI_MAP:
             return
 
