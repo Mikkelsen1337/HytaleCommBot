@@ -81,6 +81,7 @@ class UpdateCog(commands.Cog):
         print("TITLE:", title)
         print("ROLE:", role)
         print("CHANNEL:", channel)
+        print("HTML længde:", len(html))
 
         if not role or not channel:
             return
