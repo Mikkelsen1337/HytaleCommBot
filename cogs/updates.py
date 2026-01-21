@@ -68,13 +68,15 @@ class UpdateCog(commands.Cog):
             print("Ingen posts i API-respons")
             return
 
+
         latest = data[0]
 
         slug = latest["slug"]
         title = latest["title"]
 
-        link = f"https://hytale.com/news/{latest['year']}/{latest['month']}/{slug}"
+        link = f"https://hytale.com/news/{slug}"
 
+        print("LATEST KEYS:", latest.keys())
         state = self.load_state()
         if state.get("last_post_id") == slug:
             return
