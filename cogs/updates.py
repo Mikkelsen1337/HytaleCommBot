@@ -3,6 +3,7 @@ from discord.ext import commands, tasks
 import aiohttp
 import json
 from pathlib import Path
+from bs4 import BeautifulSoup
 
 ANNOUNCE_CHANNEL_ID = 1463265703887896777
 NEWS_CHANNEL_ID = 1463259777286144032
@@ -12,7 +13,8 @@ ROLE_MAP = {
     "builder": "Builder",
     "modder": "Modder",
     "servers": "Servers",
-    "news": "News"
+    "news": "News",
+    "": "@everyone"
 }
 
 Hytale_News_URL = "https://hytale.com/news"
@@ -44,13 +46,20 @@ class UpdateCog(commands.Cog):
                 html = await resp.text()
 
 
-        latest_hash = hash(html)
+        soup = BeautifulSoup(html, "html.parser")
 
-        state = self.load_state()
-        if state["last_post_id"] == latest_hash:
+        first_article = soup.select_one("a[href^='/news/']")
+        if not first_article:
             return
 
-        state["last_post_id"] = latest_hash
+        link = "https://hytale.com" + first_article.get["href"]
+        title = first_article.get_text(strip=True)
+
+        state = self.load_state()
+        if state.get("last_post_id") == link:
+            return
+
+        state["last_post_id"] = link
         self.save_state(state)
 
         guild = self.bot.guilds[0]
@@ -61,9 +70,9 @@ class UpdateCog(commands.Cog):
             return
 
         embed = discord.Embed(
-            title="Ny Hytale Opdatering!",
-            description="Ny blog post her",
-            url=Hytale_News_URL,
+            title=title or "Ny Hytale Opdatering",
+            description="Der er netop udkommet et nyt blogpost fra Hytale.",
+            url=link,
             colour=discord.Colour.green()
         )
         embed.set_footer(text="Hytale Danmark")
@@ -76,7 +85,7 @@ class UpdateCog(commands.Cog):
             role_key = role_key.lower()
 
             if role_key not in ROLE_MAP:
-                await ctx.send("Ugyldig rolle! Brug: builder, modder, servers, news")
+                await ctx.send("Ugyldig rolle! Brug: builder, modder, servers, news eller everyone")
                 return
 
             guild = ctx.guild
@@ -87,9 +96,9 @@ class UpdateCog(commands.Cog):
                 await ctx.send(f"Rollen '{role_name}' findes ikke")
                 return
 
-            channel = guild.get_channel(ANNOUNCE_CHANNEL_ID)
+            channel = ctx.channel
             if not channel:
-                await ctx.send("Hvem har sletter announcement kanalen??")
+                await ctx.send("Hvem har slettet announcement kanalen??")
                 return
 
             embed = discord.Embed(
